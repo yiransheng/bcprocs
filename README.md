@@ -1,4 +1,7 @@
-# Buzaianu and Chen procedures for finding the best treatment among experimental Bernoulli populations
+# bcprocs
+
+
+R package for Buzaianu and Chen procedures for finding the best treatment among experimental Bernoulli populations.
 
 ## Reference
 
