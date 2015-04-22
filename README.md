@@ -3,6 +3,10 @@
 
 R package for Buzaianu and Chen procedures for finding the best treatment among experimental Bernoulli populations.
 
+## Doc
+
+[Documentation](http://yiransheng.github.io/bcprocs/)
+
 ## Reference
 
 1. Dunnett, C. W. (1984). Selection of the best treatment in comparison to a control with an application to a medical trial. In: Santner, T. J., Tamhane, A. C., eds. Design of Experiments: Ranking and Selection. New York: Dekker.
