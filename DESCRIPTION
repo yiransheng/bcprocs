@@ -1,0 +1,12 @@
+Package: bcprocs
+Title: Various Buzaianu and Chen procedures for dealing with selection problems with control, from Bernoulli populations (1 stage, 2 stage, with and without curtailment)
+Imports: lambda.r (>= 1.1.6)
+Version: 0.1
+Author: Yiran Sheng
+Maintainer: Yiran Sheng <shengyiran@gmail.com>
+Description: What the package does (one paragraph)
+Depends: R (>= 3.0.2)
+License: MIT
+LazyData: true
+Suggests: knitr
+VignetteBuilder: knitr
