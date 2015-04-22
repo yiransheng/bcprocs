@@ -1,7 +1,13 @@
 # bcprocs
 
-
 R package for Buzaianu and Chen procedures for finding the best treatment among experimental Bernoulli populations.
+
+## Installation
+
+```
+library(devtools)
+install_github('yiransheng/bcprocs')
+```
 
 ## Doc
 
