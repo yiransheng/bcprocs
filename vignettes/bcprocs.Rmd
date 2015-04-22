@@ -1,0 +1,494 @@
+---
+title: "Package 'bcprocs'"
+author: "Yiran Sheng"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+vignette: |
+  %\VignetteIndexEntry{Vignette Title} %\VignetteEngine{knitr::knitr} %\usepackage[utf8]{inputenc}
+---
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(cache=FALSE)
+# Loading packages and Data
+library(pander)
+library(bcprocs)
+```
+
+****************************************
+
+# Procedures Overview
+
+
+**bcprocs.r-package** 
+
+*Buzaianu and Chen procedures for finding the best treatment among experimental Bernoulli populations* 
+
+
+**Installation Locally**
+
+```{r, eval=FALSE}
+install.packages()
+```
+
+#### Problem Formalization
+
+Let $\pi_1, \pi_2, \dots, \pi_k$ be k independent binomial populations with unknown parameters $\theta_1, \theta_2, \dots, \theta_n$. In addition, we have a control population $\pi_0$ with parameter $\theta_0$. The goal is to selection the best treatment with "superior" probability of success compared to $\pi_0$ or control provided such a treatment exists.  
+
+#### Assumptions for the Experiment
+
+Following the framework laid out by Thall et al. (1988) and Buzaianu and Chen (2008), the assumptions for the experimental procedures are:
+
+* The experimenter should specify constants $\delta_0, \delta_1, \delta_2$, with $0 < \delta_0 < \delta_1$, the value $\theta_0 + \delta_1$ indicates only a *marginal* improvement over control, while $\theta_0 + \delta_2$ represents a significant improvement over control 
+
+* The experimenter should also specify constants $P^{*}_1$ and $P^{*}_2$ $((2^{-k}) < P^*_1 <1, 1-2^{-k}<P^*_2<1)$, so that $\Pr\{\text{Select Control}\} \geq P^*_1$ if $max_{i \in K}(\theta_i) \leq \theta_0+\delta_0$ and $\Pr\{\text{Select} \pi_k\} \geq P^*_2$ if $max_{i \in K}(\theta_k) \geq \theta_0+\delta_2$
+
+* No $\theta_i$ lies in the interval $(\theta_0+\delta_1, \theta_0+\delta_2)$
+
+In the context of hypothesis testing $P^*_1$ is equivalent to $1-\alpha$ where $\alpha$ is the size of the test, and $P^*_2$ is equivalent to the power of the test $1-\beta$. 
+
+# Proposed Multistage Procedure
+
+
+
+
+
+
+```{r, results='asis', echo=FALSE}
+procs.info <- data.frame( rbind(
+  c('$R_{bc1}$', '`Rbc1`', 'Single-stage procedure without curtailment'),
+  c('$R_{bc2}$', '`Rbc2`', 'Single-stage procedure with curtailment'),
+  c('$R_{bc1}^{h}$', '`Rhbc1`', 'Two-stage procedure without curtailment'),
+  c('$R_{bc2}^{h}$', '`Rhbc2`', 'Two-stage procedure with curtailment'),
+  c('$R_{bc2}^{M}$', '`RMbc2`', 'Multistage procedure with curtailment (testing)')
+))
+names(procs.info) <- c('Procedure', 'S3 R Object Class', 'Description')
+set.caption('List of packaged procedures') 
+pander(procs.info)
+```
+
+
+
+
+## Procedure $R_{bc1}$
+
+**Description**
+
+`Rbc1` - S3 Class constructor for $R_{bc1}$ procedure.
+
+**Arguments**
+
+
++-----------+------------------------------------------------------------------------+
+| Parameter | Description                                                            |
++===========+========================================================================+
+| `k`       | number of treatments                                                   |
++-----------+------------------------------------------------------------------------+
+| `n`       | number of maximum observations to take from each treatment can be:     |
+|           |                                                                        |
+|           | - either a single positive integer                                     |
+|           | - or a integer vector of length `k+1`                                  |
+|           |                                                                        |
++-----------+------------------------------------------------------------------------+
+| `c`       | design parameter c, cutoff point for choosing a treatment over control |
++-----------+------------------------------------------------------------------------+
+
+**Value**
+
+S3 Class object of the same procedure type (`Rbc1`)
+
+**Examples**
+
+Run on a full data-set.
+
+```{r}
+# run on a full dataset
+# data is a data.frame of dimention (5 ,2), with 0/1 values
+data <- data.frame(
+  rbind(
+    c(0, 1, 1),
+    c(1, 1, 0),
+    c(0, 0, 1),
+    c(0, 1, 0),
+    c(0, 1, 0)
+  )
+)
+proc <- Rbc1(k=2, n=5, c=1, data=data)
+summary(proc)
+```
+
+Run with vector-at-a-time sampling.
+
+```{r}
+# Simulation Example, refer to Buzaianu and Chen(2008)
+# Choose: k=3, P1=0.95, P2=0.95, theta_0 = 0.2, delta_1 = 0.05, delta_2 = 0.2
+# From Table 2: we have, n = 128, c=13
+n <- 128
+k <- 3
+proc <- Rbc1(k=k, c=13, n=n)
+# generate population parameters that satisfies model assumptions
+repeat {
+  p <- c(0.2, runif(k))         # population bernoulie parameters
+  jmax <- which.max(p[-1]) + 1  # best treatment
+  if (p[jmax] >= p[1] + 0.2) {  # ensure assumptions in Section (2) 
+                                # are satisfied AND there's a best treatment to select
+    invalid <- sapply(p[-1], function(x) {
+      x > p[1] + 0.05 & x < p[1] + 0.2
+    })
+    if(all(!invalid)) break
+  }
+}
+step <- 1
+repeat {
+  sampleObs <- sapply(p, function(prob) { 
+  # generate B(1, p) binary r.v. as observations, from population probs.
+    rbinom(1, 1, prob)
+  })
+  proc <- vector.at.a.time(proc, sampleObs)
+  step <- step + 1
+  if (step > n | ( is.done(proc) )) break
+}
+summary(proc)
+```
+
+
+## Procedure $R_{bc2}$
+
+**Description**
+
+`Rbc2` - S3 Class constructor for $R_{bc2}$ procedure.
+
+**Arguments**
+
+
++-----------+------------------------------------------------------------------------+
+| Parameter | Description                                                            |
++===========+========================================================================+
+| `k`       | number of treatments                                                   |
++-----------+------------------------------------------------------------------------+
+| `n`       | number of maximum observations to take from each treatment             |
++-----------+------------------------------------------------------------------------+
+| `c`       | design parameter c, cutoff point for choosing a treatment over control |
++-----------+------------------------------------------------------------------------+
+
+**Value**
+
+S3 Class object of the same procedure type (`Rbc2`)
+
+**Examples**
+
+```{r}
+# Simulation Example
+# Choose: k=3, P1=0.95, P2=0.95, theta_0 = 0.2, delta_1 = 0.05, delta_2 = 0.2
+# From Table 2: we have, n = 128, c=13
+n <- 128
+k <- 3
+proc <- Rbc2(k=k, c=13, n=n)
+repeat {
+  p <- c(0.2, runif(k))         # population bernoulie parameters
+  jmax <- which.max(p[-1]) + 1  # best treatment
+  if (p[jmax] >= p[1] + 0.2) {  
+    invalid <- sapply(p[-1], function(x) {
+      x > p[1] + 0.05 & x < p[1] + 0.2
+    })
+    if(all(!invalid)) break
+  }
+}
+step <- 1
+repeat {
+  sampleObs <- sapply(p, function(prob) { 
+    rbinom(1, 1, prob)
+  })
+  proc <- vector.at.a.time(proc, sampleObs)
+  step <- step + 1
+  if (step > n | ( is.done(proc) )) break
+}
+summary(proc)
+```
+
+Reproducing example from See Buzaianu and Chen (2008) Section (6). 
+
+```{r}
+# See Buzaianu and Chen (2008) Section (6)
+# Example using data from Table 3. 
+data(rbc2.example)
+proc <- Rbc2(k=4, n=112, c=13)
+
+step <- 1
+repeat {
+  proc <- vector.at.a.time(proc, rbc2.example[step, ])
+  step <- step + 1
+  if (step > nrow(rbc2.example) || is.done(proc) ) break
+}
+
+summary(proc)
+```
+
+## Helper functions for $R_{bc1}$
+
+We also provide two helper functions `Size` and `Power`, to compute $P_1^*$ and $P_2^*$ based on experiment design. 
+
+**Senario 1:** $max_{i \in K}(\theta_i) \leq \theta_0+\delta_0$
+
+`Size`$(k, c, n, \delta_0)$ := $1-P^*_1$ under LFC (least favorable condition)
+
+LFC: $\theta_1 = \theta_2 = \dots = \theta_k = \theta_0 + \delta_0$
+
+$P^*_1 = \Pr\{\text{Select Control}\ | \text{LFC} \}$ 
+
+**Example**
+
+```{r}
+# Configuration from Table 2. in See Buzaianu and Chen (2008)
+# ~ 0.05
+Size(0.2, k=4, c=10, n=72, d0=0)
+```
+
+**Senario 2:** $max_{i \in K}(\theta_i) \geq \theta_0+\delta_2$
+
+`Power`$(k, c, n, \delta_0, \delta_1, \delta_2)$ := $P^*_2$ under LFC (least favorable condition)
+
+LFC: $\theta_1 = \theta_2 = \dots = \theta_{k-1} = \theta_0 + \delta_1$ and $\theta_k = \theta_0 + \delta_2$
+
+$P^*_2 = \Pr\{\text{Correct Selection}\ | \text{LFC} \}$ 
+
+**Example**
+
+```{r}
+# Configuration from Table 2. in See Buzaianu and Chen (2008)
+# ~ 0.80
+Power(0.2, k=4, c=11, n=83, d0=0, d1=0.05, d2=0.20)
+```
+
+## Procedure $R^h_{bc1}$
+
+**Description**
+
+`Rhbc1` - S3 Class constructor for $R_{bc1}^h$ procedure, two-stage testing and selection procedure without curtailment.
+
+**Arguments**
+
++-----------+------------------------------------------------------------------------+
+| Parameter | Description                                                            |
++===========+========================================================================+
+| `k`       | number of treatments                                                   |
++-----------+------------------------------------------------------------------------+
+| `n1`      | number of maximum observations to take from each treatment at stage 1  |
++-----------+------------------------------------------------------------------------+
+| `n2`      | number of maximum observations to take from each treatment at stage 2  |
++-----------+------------------------------------------------------------------------+
+| `c1`      | design parameter c1, cutoff point for choosing a treatment over control|
+|           | at stage 1                                                             |
++-----------+------------------------------------------------------------------------+
+| `c2`      | design parameter c2, cutoff point for choosing a treatment over control|
+|           | at stage 2                                                             |
++-----------+------------------------------------------------------------------------+
+
+**Value**
+
+S3 Class object of the same procedure type (`Rhbc1`)
+
+**Examples**
+
+```{r}
+# Simulated Example
+k <- 3 ; n1=38 ; n2=59
+repeat {
+  p <- c(0.2, runif(k))         # population bernoulie parameters
+  jmax <- which.max(p[-1]) + 1  # best treatment
+  if (p[jmax] >= p[1] + 0.2) {  
+    invalid <- sapply(p[-1], function(x) {
+      x > p[1] + 0.05 & x < p[1] + 0.2
+    })
+    if(all(!invalid)) break
+  }
+}
+# generate random sample for stage I
+data.stage1 <- as.data.frame( sapply(p, function(p) {
+  rbinom(n1, 1, p)
+}) )
+proc <- Rhbc1(k=k, c1=3, c2=10, n1=n1, n2=n2, data=data.stage1)
+# generate random sample for stage II
+data.stage2 <- as.data.frame( sapply(c(p[1], p[proc$candidate+1]), function(p) {
+  rbinom(n2, 1, p)
+}) )
+proc <- run.experiment(proc, data.stage2)
+summary(proc)
+```
+
+## Procedure $R^h_{bc2}$
+
+**Description**
+
+`Rhbc2` - S3 Class constructor for $R^h_{bc2}$, two-stage testing and selection procedure with curtailment.
+
+**Arguments**
+
+
++-----------+------------------------------------------------------------------------+
+| Parameter | Description                                                            |
++===========+========================================================================+
+| `k`       | number of treatments                                                   |
++-----------+------------------------------------------------------------------------+
+| `n1`      | number of maximum observations to take from each treatment at stage 1  |
++-----------+------------------------------------------------------------------------+
+| `n2`      | number of maximum observations to take from each treatment at stage 2  |
++-----------+------------------------------------------------------------------------+
+| `c1`      | design parameter c1, cutoff point for choosing a treatment over control|
+|           | at stage 1                                                             |
++-----------+------------------------------------------------------------------------+
+| `c2`      | design parameter c2, cutoff point for choosing a treatment over control|
+|           | at stage 2                                                             |
++-----------+------------------------------------------------------------------------+
+
+**Value**
+
+S3 Class object of the same procedure type (`Rhbc2`)
+
+**Examples**
+
+Reproduce Section (6) in Buzaianu and Chen (2009)
+
+```{r}
+data(rhbc2.example)
+proc <- Rhbc2(k=3, n1=52, c1=2, n2=75, c2=15)
+step <- 1
+repeat {
+  proc <- stage.one(proc, rhbc2.example[step, ])
+  step <- step + 1
+  if (step > nrow(rhbc2.example) || is.done(proc, stage=1) ) break
+}
+# According to Buzaianu and Chen (2009)'s example
+# in stage II we observe 26 successes from control
+# and 64 successes from Treatment 1
+x02 <- sample(c(rep(1, 26), rep(0, 64)), 90)
+xk2 <- sample(c(rep(1, 64), rep(0, 21)), 85)
+proc <- stage.two(proc, x02, xk2)
+summary(proc)
+```
+
+Simulated Example. 
+
+```{r}
+# Simulation Example
+# Choose: k=3, P1=0.95, P2=0.80, theta_0 = 0.2, delta_1 = 0.05, delta_2 = 0.2
+# From Table 2: we have, n1=52, n2=75, c1=2, c2=15
+k <- 3
+proc <- Rhbc2(k=k, n1=52, n2=75, c1=2, c2=15)
+repeat {
+  p <- c(0.2, runif(k))         # population bernoulie parameters
+  jmax <- which.max(p[-1]) + 1  # best treatment
+  if (p[jmax] >= p[1] + 0.2) {  
+    invalid <- sapply(p[-1], function(x) {
+      x > p[1] + 0.05 & x < p[1] + 0.2
+    })
+    if(all(!invalid)) break
+  }
+}
+step <- 1
+repeat {
+  sampleObs <- sapply(p, function(prob) { 
+    rbinom(1, 1, prob)
+  })
+  proc <- stage.one(proc, sampleObs)
+  step <- step + 1
+  if (step > 52 || ( is.done(proc) )) break
+}
+summary(proc)
+j <- proc$candidate + 1
+n2.control <- 52+75 - proc$nobs[1]
+n2.candidate <- 52+75 - proc$nobs[j] 
+proc <- stage.two(proc, rbinom(n2.control, 1, p[1]), rbinom(n2.candidate, 1, p[j]))
+summary(proc)
+```
+
+## Helper functions for $R^h_{bc1}$
+
+We also provide two helper functions `Sizeh` and `Powerh`, to compute $P_1^*$ and $P_2^*$ based on experiment design. 
+
+**Senario 1:** $max_{i \in K}(\theta_i) \leq \theta_0+\delta_0$
+
+`Sizeh`$(k, c1, n1, c2, n2, \delta_0)$ := $1-P^*_1$ under LFC (least favorable condition)
+
+LFC: $\theta_1 = \theta_2 = \dots = \theta_k = \theta_0 + \delta_0$
+
+$P^*_1 = \Pr\{\text{Select Control}\ | \text{LFC} \}$ 
+
+**Example**
+
+```{r}
+# Configuration from Table 2. in See Buzaianu and Chen (2009)
+# ~ 0.05
+Sizeh(0.4, k=2, c1=2, n1=47, c2=13, n2=62, d0=0)
+```
+
+**Senario 2:** $max_{i \in K}(\theta_i) \geq \theta_0+\delta_2$
+
+`Powerh`$(k, c1, n1, c2, n2, \delta_0, \delta_1, \delta_2)$ := $P^*_2$ under LFC (least favorable condition)
+
+LFC: $\theta_1 = \theta_2 = \dots = \theta_{k-1} = \theta_0 + \delta_1$ and $\theta_k = \theta_0 + \delta_2$
+
+$P^*_2 = \Pr\{\text{Correct Selection}\ | \text{LFC} \}$ 
+
+**Example**
+
+```{r}
+# Configuration from Table 2. in See Buzaianu and Chen (2009)
+# ~ 0.80
+Powerh(0.4, k=2, c1=2, n1=47, c2=13, n2=62, d0=0, d1=0.05, d2=0.2)
+```
+
+## Procedure $R^M_{bc2} (Experimental)$
+
+**Description**
+
+`RMbc2` - S3 Class constructor for $R^M_{bc2}$ procedure.
+
+**Arguments**
+
+
++-----------+------------------------------------------------------------------------+
+| Parameter | Description                                                            |
++===========+========================================================================+
+| `k`       | number of treatments                                                   |
++-----------+------------------------------------------------------------------------+
+| `ns`      | number of observations to take from each treatment at each stage       |
++-----------+------------------------------------------------------------------------+
+| `s`       | number of maximum stages, the experiment is allowed to carry out       |
++-----------+------------------------------------------------------------------------+
+| `c`       | design parameter c, cutoff point for choosing a treatment over control |
++-----------+------------------------------------------------------------------------+
+
+**Value**
+
+Object
+
+- attribute `$get.state`: function that produces the current procedure state
+- attribute `$next.state`: function to update procedure state, takes a single vector of binomial obs count as input
+- attribute `$is.done`: function that returns Boolean value, indicating if the procedure has terminated of not
+
+**Note**
+
+Currently, `RMbc2` does not have `summary` generic implemented, examine procedure state manually by calling `$get.state()`
+
+**Examples**
+
+```{r, warning=FALSE}
+p <- c(0.2, 0.17, 0.42)
+proc <- RMbc2(k=2, c=8, ns=6, s=10)
+repeat {
+  data <- sapply(p, function(p) {
+    rbinom(1, 6, p)
+  })
+  # eg. data -> c(2, 0, 4)
+  proc$next.state(data)
+  if(proc$is.done()) {
+    break
+  }
+}
+proc$get.state()$decision
+```
+
