@@ -70,6 +70,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <li><a href="#helper-functions-for-rh_bc1">Helper functions for <span class="math">\(R^h_{bc1}\)</span></a></li>
 <li><a href="#procedure-rm_bc2-experimental">Procedure <span class="math">\(R^M_{bc2} (Experimental)\)</span></a></li>
 </ul></li>
+<li><a href="#refrence">Refrence</a></li>
 </ul>
 </div>
 
@@ -229,12 +230,12 @@ repeat {
 }
 summary(proc)</code></pre>
 <pre><code>## Procedure Rbc1, see Buzaianu and Chen (2008)
-## Procedure completed: select Treatement 2 
+## Procedure completed: select Treatement 3 
 ## At Step:  128</code></pre>
 <pre><code>##                   Control Treatment 1 Treatment 2 Treatment 3
-## No. Obs       128.0000000 128.0000000  128.000000   128.00000
-## No. Successes  33.0000000  97.0000000  122.000000     4.00000
-## p.esti.         0.2578125   0.7578125    0.953125     0.03125</code></pre>
+## No. Obs       128.0000000   128.00000   128.00000  128.000000
+## No. Successes  25.0000000    28.00000    60.00000   90.000000
+## p.esti.         0.1953125     0.21875     0.46875    0.703125</code></pre>
 </div>
 <div id="procedure-r_bc2" class="section level2">
 <h2>Procedure <span class="math">\(R_{bc2}\)</span></h2>
@@ -298,11 +299,11 @@ repeat {
 summary(proc)</code></pre>
 <pre><code>## Procedure Rbc2, see Buzaianu and Chen (2008)
 ## Procedure completed: select Treatement 3 
-## Used 416 observations in total, saving: 18.75% 
-## At Step:  109</code></pre>
+## Used 385 observations in total, saving: 24.80% 
+## At Step:  119</code></pre>
 <pre><code>##               Control Treatment 1 Treatment 2 Treatment 3
-## No. Obs           109         100          98         109
-## No. Successes      22          19          16          55
+## No. Obs            80         119          67         119
+## No. Successes      12         102           1         111
 ## Stopped             1           1           1           1</code></pre>
 <p>Reproducing example from See Buzaianu and Chen (2008) Section (6).</p>
 <pre class="r"><code># See Buzaianu and Chen (2008) Section (6)
@@ -419,9 +420,9 @@ summary(proc)</code></pre>
 ## Stage II complted, select: Treatement 2</code></pre>
 <pre><code>##                   Control Treatment 1 Treatment 2 Treatment 3
 ## No. Obs(I)             38          38          38          38
-## No. Successes(I)        9          33          36           2
+## No. Successes(I)        9          20          31          27
 ## No. Obs(II)            59                      59            
-## No. Successes(II)      10                      46</code></pre>
+## No. Successes(II)      15                      45</code></pre>
 </div>
 <div id="procedure-rh_bc2" class="section level2">
 <h2>Procedure <span class="math">\(R^h_{bc2}\)</span></h2>
@@ -519,13 +520,13 @@ repeat {
 }
 summary(proc)</code></pre>
 <pre><code>## Procedure Rhbc2, see Buzaianu and Chen (2009)
-## Stage I completed: select Treatement 1 
-## Used 161 observations in total in this stage
-## At Step:  50 
+## Stage I completed: select Treatement 2 
+## Used 158 observations in total in this stage
+## At Step:  44 
 ## Ready to start Stage II.</code></pre>
 <pre><code>##                   Control Treatment 1 Treatment 2 Treatment 3
-## No. Obs(I)             32          50          50          29
-## No. Successes(I)        8          49          47           6
+## No. Obs(I)             37          33          44          44
+## No. Successes(I)        6           2          29          20
 ## No. Obs(II)                                                  
 ## No. Successes(II)</code></pre>
 <pre class="r"><code>j &lt;- proc$candidate + 1
@@ -534,16 +535,16 @@ n2.candidate &lt;- 52+75 - proc$nobs[j]
 proc &lt;- stage.two(proc, rbinom(n2.control, 1, p[1]), rbinom(n2.candidate, 1, p[j]))
 summary(proc)</code></pre>
 <pre><code>## Procedure Rhbc2, see Buzaianu and Chen (2009)
-## Stage I completed: select Treatement 1 
-## Used 161 observations in total in this stage
-## At Step:  50 
-## Stage II complted, choose:Treatement 1 
-## Used 172 observations in total in this stage</code></pre>
+## Stage I completed: select Treatement 2 
+## Used 158 observations in total in this stage
+## At Step:  44 
+## Stage II complted, choose:Treatement 2 
+## Used 173 observations in total in this stage</code></pre>
 <pre><code>##                   Control Treatment 1 Treatment 2 Treatment 3
-## No. Obs(I)             32          50          50          29
-## No. Successes(I)        8          49          47           6
-## No. Obs(II)            95          77                        
-## No. Successes(II)      20          76</code></pre>
+## No. Obs(I)             37          33          44          44
+## No. Successes(I)        6           2          29          20
+## No. Obs(II)            90                      83            
+## No. Successes(II)      15                      58</code></pre>
 </div>
 <div id="helper-functions-for-rh_bc1" class="section level2">
 <h2>Helper functions for <span class="math">\(R^h_{bc1}\)</span></h2>
@@ -627,6 +628,14 @@ repeat {
 proc$get.state()$decision</code></pre>
 <pre><code>## [1] 2</code></pre>
 </div>
+</div>
+<div id="refrence" class="section level1">
+<h1>Refrence</h1>
+<ol style="list-style-type: decimal">
+<li><p>Dunnett, C. W. (1984). Selection of the best treatment in comparison to a control with an application to a medical trial. In: Santner, T. J., Tamhane, A. C., eds. Design of Experiments: Ranking and Selection. New York: Dekker.</p></li>
+<li><p>Buzaianu, E. M., Chen, P. (2005). On selecting among treatments with binomial outcomes. Commun. Statist. Theor. Meth. 34:1247–1264.</p></li>
+<li><p>Buzaianu, Elena M. and Chen, Pinyuen (2008) Curtailment Procedure for Selecting Among Bernoulli Populations. Commun. Statist. Theor. Meth. 37:7, 1085 - 1102</p></li>
+</ol>
 </div>
 
 
